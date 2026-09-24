@@ -1,0 +1,16 @@
+# Результаты прогонов
+results*.json
+*.summary.json
+*.log
+
+# Токены и секреты
+k6-token.txt
+.env*
+!.env.example
+
+# Системные
+.DS_Store
+Thumbs.db
+
+# IDE (опционально)
+.idea/
