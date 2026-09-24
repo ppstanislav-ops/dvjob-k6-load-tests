@@ -15,9 +15,8 @@
 | Файл | Назначение | Целевой стенд |
 |------|-----------|---------------|
 | `smoke-prod-test.js`      | Быстрый smoke: 1 VU, 20 с, 5 эндпоинтов | prod |
-| `dev-dvjob_load_test.js`  | Полный нагрузочный тест                  | dev / staging |
+| `dev-dvjob_load_test.js`  | Полный нагрузочный тест  на тестовом новом стенде | dev / staging |
 
-> ℹ️ Файл `pro_dvjob_load_test.js` — устаревший дубликат `dev-dvjob_load_test.js` с опечаткой в `BASE_URL` (`api.dvjob.pro`). Удалите его.
 
 ## Требования
 
