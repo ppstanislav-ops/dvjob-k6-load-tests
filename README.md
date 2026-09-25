@@ -1,4 +1,4 @@
-# k6 Load Tests — job-board REST API 
+# k6 Load Tests — job-платформы DVjob 
 
 Набор нагрузочных тестов для публичного API job-платформы (dev / prod).
 Написаны на [k6](https://k6.io/).
@@ -10,8 +10,9 @@
 
 | Файл | Назначение | Целевой стенд |
 |------|-----------|---------------|
-| `load_test.js`      | Полный нагрузочный тест                     | dev / staging |
-| `load_test_prod.js` | Облегчённый нагрузочный тест (сниженная нагрузка, доп. safety-checks) | production |
+| `dev-dvjob_load_test.js`      | Полный нагрузочный тест  нового тестовго стенда                                         | dev / staging |
+| `pro_dvjob_load_test.js`      | Полный нагрузочный тест  старого тестовго стенда                                        | old / staging |
+| `dvjob_load_test.js`          | Облегчённый нагрузочный тест production сайта (сниженная нагрузка, доп. safety-checks)  | production |
 
 
 ## Требования
