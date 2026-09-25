@@ -1,73 +1,51 @@
-# dvjob — k6 Load Tests
+# k6 Load Tests — job-board REST API 
 
-Набор нагрузочных и smoke-тестов для публичного API **dvjob.kz** (dev / prod).
+Набор нагрузочных тестов для публичного API job-платформы (dev / prod).
 Написаны на [k6](https://k6.io/).
 
 [![k6](https://img.shields.io/badge/k6-v0.49%2B-7D64FF)](https://k6.io/)
 
-⚠️ Безопасность
-
-- Перед прогоном на проде: уведомить дежурных, приглушить алерты, выбрать окно низкого трафика.
-- Перед полным прогоном полезно сделать smoke: `k6 run smoke-prod-test.js`.
 
 ## Содержимое
 
 | Файл | Назначение | Целевой стенд |
 |------|-----------|---------------|
-| `smoke-prod-test.js`      | Быстрый smoke: 1 VU, 20 с, 5 эндпоинтов | prod |
-| `dev-dvjob_load_test.js`  | Полный нагрузочный тест  на тестовом новом стенде | dev / staging |
+| `load_test.js`      | Полный нагрузочный тест                     | dev / staging |
+| `load_test_prod.js` | Облегчённый нагрузочный тест (сниженная нагрузка, доп. safety-checks) | production |
 
 
 ## Требования
 
-- k6 v0.49+** — [инструкция по установке](https://k6.io/docs/get-started/installation/)
-- Сетевой доступ к `api.***************`
+- k6 v0.49+ — [инструкция по установке](https://k6.io/docs/get-started/installation/)
+- Сетевой доступ к тестируемому API (адрес передаётся через `BASE_URL`, см. ниже)
 
 ## Быстрый старт
 
 ```bash
-# Smoke на прод (безопасно, читает только публичные эндпоинты)
-k6 run smoke-prod-test.js
-
 # Быстрый dev-smoke (3 VU, 30 с)
-k6 run --vus 3 --duration 30s dev-dvjob_load_test.js
+k6 run --vus 3 --duration 30s load_test.js
 
 # Полный dev-прогон
-k6 run dev-dvjob_load_test.js
+k6 run -e BASE_URL=https://api.example.com -e REGION=xx -e LANG=en load_test.js
 
 # Полный dev-прогон с сохранением результатов
-k6 run --out json=results-dev-$(date +%F).json dev-dvjob_load_test.js
+k6 run --out json=results-dev-$(date +%F).json load_test.js
 
+# Прод-прогон — ТОЛЬКО по согласованию с DevOps/владельцем продукта!
+k6 run -e BASE_URL=https://api.example.com load_test_prod.js
 ```
 
-## Переменные окружения
-
-| Переменная   | По умолчанию              | Описание |
-|--------------|---------------------------|----------|
-| `BASE_URL`   | зависит от скрипта        | Базовый URL API |
-| `REGION`     | `kz`                      | Регион контента |
-| `LANG`       | `ru`                      | Язык (`ru` / `kz` / `en`) |
-| `USER_AGENT` | `k6-dvjob-load-test/2.0`  | User-Agent в запросах |
-
-Пример:
-
-```bash
-k6 run \
-  -e BASE_URL=************** \
-  -e REGION=kz \
-  -e LANG=ru \
-  dev-dvjob_load_test.js
-```
-
-## Что покрывается
+После любого прогона в текущей папке появятся:
+- `summary.html` — наглядный HTML-отчёт (открыть в браузере);
+- `summary.json` — полный JSON со всеми метриками и thresholds.
 
 ### Сценарии нагрузки
 
-1. content_browsers — главная, футер, контакты, новости, legal-документы, feature-flags, promotions v2.
-2. vacancy_searchers — популярные запросы и 5 вариантов фильтра вакансий.
-3. resume_searchers — match-поиск, фильтры по статусу, расширенный, `has_video`.
-4. lookup_users — справочники, статистика, i18n, доступные тесты.
-5. health_spike — spike-проверка `/health` и `/v1/test`.
+1. `content_browsers` — главная, футер, контакты, новости, legal-документы, feature-flags, promotions v2.
+2. `vacancy_searchers` — популярные запросы и несколько вариантов фильтра вакансий.
+3. `resume_searchers` — match-поиск, фильтры по статусу, расширенный, `has_video`.
+4. `lookup_users` — справочники, статистика, i18n, доступные тесты.
+5. `health_spike` — spike-проверка `/health` и `/v1/test`.
 
 ### Кастомные метрики
 
@@ -79,9 +57,11 @@ k6 run \
 
 ## Известные ограничения
 
-- Dev-стенд : после серии нагрузочных прогонов (rps > 20) наблюдаются rate-limit/WAF-деградации
-  (~18 с на все запросы, 403 на отдельные). Пик `health_spike` на dev снижен до 20 rps,
-  `setup()` предупреждает при `probe > 2000 ms`.
-
-
-
+- На стендах с активным rate-limiting/WAF агрессивная нагрузка может вызывать деградацию
+  (рост латентности, 403/429-ответы). `setup()` делает пробный запрос к «лёгкому» эндпоинту
+  и предупреждает (dev) либо останавливает прогон (prod), если время ответа превышает
+  порог `DEGRADATION_THRESHOLD_MS` (по умолчанию 2000 мс, настраивается через ENV).
+- Пиковые значения в сценариях (`health_spike` и др.) заданы консервативно по умолчанию —
+  подберите их под конкретный стенд перед первым запуском.
+- Перед прод-прогоном обязательно согласуйте окно с DevOps/SRE — см. предупреждение
+  в шапке `load_test_prod.js`.
